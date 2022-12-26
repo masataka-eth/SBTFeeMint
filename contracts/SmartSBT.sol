@@ -28,13 +28,17 @@ contract SmartSBT is AccessControl,ERC721AQueryable  {
   uint256 public maxSupply = 3000;
   bool public paused = true;
   bytes32 public merkleRoot;
+  uint256 public limitGroup;  //0 start
   uint256 public alcount; // max:65535 Always raiseOrder
 
   // for payable
   uint256 public cost = 0.001 ether;
+  address public  withdrawAddress;
 
+  // constructor(
+  // ) ERC721A("SmartSBT", "SSBT") {
   constructor(
-  ) ERC721A("SmartSBT", "SSBT") {
+  ) ERC721A("Aopanda Party SBT Memorial", "APSM") {
       _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
   }
 
@@ -108,6 +112,7 @@ contract SmartSBT is AccessControl,ERC721AQueryable  {
   function alMint(uint256 _mintAmount,uint256 _amountMax,uint256 _group,bytes32[] calldata _merkleProof) external {
     uint256 supply = _totalMinted();
     require(!paused, "mint is paused");
+    require(_group <= limitGroup,"not target group");
     require(tx.origin == msg.sender,"the caller is another controler");
     require(getAlExit(msg.sender,_amountMax,_group,_merkleProof) == true,"You don't have a whitelist");
     require(_mintAmount > 0,"mintAmount is zero");
@@ -123,6 +128,7 @@ contract SmartSBT is AccessControl,ERC721AQueryable  {
   function alMintPayable(uint256 _mintAmount,uint256 _amountMax,uint256 _group,bytes32[] calldata _merkleProof) external payable{
     uint256 supply = _totalMinted();
     require(!paused, "mint is paused");
+    require(_group <= limitGroup,"not target group");
     require(tx.origin == msg.sender,"the caller is another controler");
     require(getAlExit(msg.sender,_amountMax,_group,_merkleProof) == true,"You don't have a whitelist");
     require(_mintAmount > 0,"mintAmount is zero");
@@ -168,6 +174,22 @@ contract SmartSBT is AccessControl,ERC721AQueryable  {
       _;
   }
 
+  // option
+  function airdropMint_array(address[] calldata _airdropAddresses , uint256[] memory _UserMintAmount) external onlyAdmin{
+      uint256 supply = _totalMinted();
+      uint256 _mintAmount = 0;
+      for (uint256 i = 0; i < _UserMintAmount.length; i++) {
+          _mintAmount += _UserMintAmount[i];
+      }
+      require(_mintAmount > 0, "need to mint at least 1 NFT");
+      require(supply + _mintAmount <= maxSupply, "max NFT limit exceeded");
+      require(_airdropAddresses.length ==  _UserMintAmount.length, "array length unmuch");
+
+      for (uint256 i = 0; i < _UserMintAmount.length; i++) {
+          _safeMint(_airdropAddresses[i], _UserMintAmount[i] );
+      }
+  }
+
   function setMaxSupply(uint256 _maxSupply) external onlyAdmin {
     maxSupply = _maxSupply;
   }
@@ -184,6 +206,10 @@ contract SmartSBT is AccessControl,ERC721AQueryable  {
     paused = _state;
   }
 
+  function setLimitGroup(uint256 _value) external onlyAdmin{
+        limitGroup = _value;
+  }
+
   function setMerkleRoot(bytes32 _merkleRoot) external onlyAdmin {
         merkleRoot = _merkleRoot;
     }
@@ -196,16 +222,27 @@ contract SmartSBT is AccessControl,ERC721AQueryable  {
       }
   }
 
-  function setCost(uint256 _value) external onlyAdmin {
-      cost = _value;
-  }
-
   function setTokenURI(ITokenURI _tokenuri) external onlyAdmin{
       tokenuri = _tokenuri;
   }
 
   function setWalletFamily(IWalletFamily _walletfamily) external onlyAdmin{
       walletfamily = _walletfamily;
+  }
+
+  // for payable
+  function setCost(uint256 _value) external onlyAdmin {
+      cost = _value;
+  }
+
+  function setWithdrawAddress(address _address) external onlyAdmin {
+        withdrawAddress = _address;
+  }
+
+  function withdraw() external onlyAdmin {
+      require(withdrawAddress != address(0),"address is invalid");
+      (bool os, ) = payable(withdrawAddress).call{value: address(this).balance}("");
+      require(os);
   }
 
   //SBT

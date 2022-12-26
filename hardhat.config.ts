@@ -31,6 +31,10 @@ const config: HardhatUserConfig = {
         mnemonic: 'test test test test test test test test test test test junk',
       },
     },
+    mainnet: {
+      url: "https://eth-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_KEY,
+      accounts: [`${process.env.PRIVATE_KEY}`],
+    },
     goerli: {
       url: "https://eth-goerli.g.alchemy.com/v2/" + process.env.ALCHEMY_KEY,
       accounts: [`${process.env.PRIVATE_KEY}`],

@@ -242,5 +242,28 @@ describe("SmartSBT contract", function () {
     expect (await myContract.tokensOfOwner(addr4.address)).to.deep.equals([9,10]);
   });
     
+  describe("supportsInterfaces", () => {
+    it("ERC721", async () => {
+      const { myContract } = await loadFixture(fixture);
+      expect(await myContract.supportsInterface("0x80ac58cd")).to.be.true
+    })
+    it("ERC721Metadata", async () => {
+      const { myContract } = await loadFixture(fixture);
+      expect(await myContract.supportsInterface("0x5b5e139f")).to.be.true
+    })
+    it("ERC165", async () => {
+      const { myContract } = await loadFixture(fixture);
+      expect(await myContract.supportsInterface("0x01ffc9a7")).to.be.true
+    })
+    // it("ERC2981", async () => {
+    //   const { myContract } = await loadFixture(fixture);
+    //   expect(await myContract.supportsInterface("0x2a55205a")).to.be.true
+    // })
+    it("AccessControl", async () => {
+      const { myContract } = await loadFixture(fixture);
+      expect(await myContract.supportsInterface("0x7965db0b")).to.be.true
+    })
+  })
+  
 
 });
