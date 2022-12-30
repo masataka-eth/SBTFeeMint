@@ -31,6 +31,10 @@ contract SmartSBT is AccessControl,ERC721AQueryable  {
   uint256 public limitGroup;  //0 start
   uint256 public alcount; // max:65535 Always raiseOrder
 
+  // for external
+  bytes32 public constant MINTER_ROLE  = keccak256("MINTER_ROLE");
+  bytes32 public constant BURNER_ROLE  = keccak256("BURNER_ROLE");
+
   // for payable
   uint256 public cost = 0.001 ether;
   address public  withdrawAddress;
@@ -40,6 +44,8 @@ contract SmartSBT is AccessControl,ERC721AQueryable  {
   constructor(
   ) ERC721A("Aopanda Party SBT Memorial", "APSM") {
       _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+      _grantRole(MINTER_ROLE       , msg.sender);
+      _grantRole(BURNER_ROLE       , msg.sender);
   }
 
   function supportsInterface(bytes4 interfaceId) public view virtual 
@@ -122,6 +128,22 @@ contract SmartSBT is AccessControl,ERC721AQueryable  {
 
     _setmintedCount(msg.sender, _mintAmount);
     _safeMint(msg.sender, _mintAmount);
+  }
+
+  function externalMint(address _address , uint256 _amount ) external payable {
+    uint256 supply = _totalMinted();
+    require(hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
+    require( supply + _amount <= maxSupply , "max NFT limit exceeded");
+    _safeMint( _address, _amount );
+  }
+
+  function externalBurn(uint256[] memory _burnTokenIds) external{
+    require(hasRole(BURNER_ROLE, msg.sender), "Caller is not a burner");
+    for (uint256 i = 0; i < _burnTokenIds.length; i++) {
+        uint256 tokenId = _burnTokenIds[i];
+        require(tx.origin == ownerOf(tokenId) , "Owner is different");
+        _burn(tokenId);
+    }        
   }
 
   // sale option
