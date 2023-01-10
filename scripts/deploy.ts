@@ -5,8 +5,9 @@ async function main() {
   console.log("Deploying contracts with the account:", deployer.address);
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const Token = await ethers.getContractFactory("SmartSBT");
+  const Token = await ethers.getContractFactory("SBTwithMint");
   const token = await Token.deploy();
+  await token.deployed();
   console.log("Token address:", token.address);
   }
   main()

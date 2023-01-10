@@ -6,7 +6,7 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-import { Base64 } from './libs/base64.sol';
+//import { Base64 } from './libs/base64.sol';
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "erc721a/contracts/extensions/ERC721AQueryable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -23,7 +23,9 @@ contract SBTwithMint is AccessControl,ERC721AQueryable,ReentrancyGuard  {
 
     string public baseURI;
     string public baseExtension = ".json";
-    uint256 public maxSupply = 3000;
+    bool public useSingleMetadata = true;
+    string public singleMetadataURI;
+    uint256 public maxSupply = 10000;
 
     constructor(
     // ) ERC721A("CollectionName", "Symbol") {
@@ -32,6 +34,33 @@ contract SBTwithMint is AccessControl,ERC721AQueryable,ReentrancyGuard  {
         _grantRole(MINTER_ROLE       , msg.sender);
         _grantRole(BURNER_ROLE       , msg.sender);
     }
+
+    // onlyAdmin
+    modifier onlyAdmin() {
+        _checkRole(DEFAULT_ADMIN_ROLE);
+        _;
+    }
+
+    function setBaseURI(string memory _newBaseURI) external onlyAdmin {
+        baseURI = _newBaseURI;
+    }
+
+    function setBaseExtension(string memory _newBaseExtension) external onlyAdmin {
+        baseExtension = _newBaseExtension;
+    }
+
+    function setUseSingleMetadata(bool _useSingleMetadata) external onlyAdmin {
+        useSingleMetadata = _useSingleMetadata;
+    }
+
+    function setSingleMetadataURI(string memory _uri) external onlyAdmin{
+        singleMetadataURI = _uri;
+    }
+
+    function setTokenURI(ITokenURI _tokenuri) external onlyAdmin{
+        tokenuri = _tokenuri;
+    }
+
 
 
     // internal
@@ -64,6 +93,20 @@ contract SBTwithMint is AccessControl,ERC721AQueryable,ReentrancyGuard  {
             require(tx.origin == ownerOf(tokenId) , "Owner is different");
             _burn(tokenId);
         }        
+    }
+
+    function tokenURI(uint256 tokenId) public view virtual override(IERC721A,ERC721A)  returns (string memory){
+        require(_exists(tokenId),"ERC721AMetadata: URI query for nonexistent token");
+        if(address(tokenuri) == address(0)){
+            if(useSingleMetadata == true){
+                return singleMetadataURI;
+            }else{
+                return string(abi.encodePacked(ERC721A.tokenURI(tokenId), baseExtension));
+            }
+        }else{
+            // Full-on chain support
+            return tokenuri.tokenURI_future(tokenId);
+        }
     }
 
     //SBT
